@@ -1,0 +1,14 @@
+adddir obj/
+adddir build/
+cdir obj/
+cdir build/
+
+dep ncurses
+dep menu
+dep SDL2
+dep SDL2_mixer
+dep pthread
+
+include main.c
+
+build output
