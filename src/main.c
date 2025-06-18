@@ -6,6 +6,7 @@
 #include <menu.h>
 #include <dirent.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #define SIZE_ARRAY(a) (sizeof(a)/sizeof(a[0]))
 
@@ -17,25 +18,6 @@ void sigHandler(int s) {
 char **choices = {
 };
 
-
-void scrollname(WINDOW* stat, char* playingSong) {
-	static int scrollamnt = 0;
-	char scrollcname[48];
-	static int sat = 1;
-
-		if(strlen(playingSong) < 48) {
-		mvwprintw(stat, 1, 1, "%s", playingSong);
-		} else {
-			scrollamnt+=sat;
-			if(scrollamnt > strlen(playingSong)-47) sat=-1;
-			if(scrollamnt <1) sat=1;
-			strncpy(scrollcname, playingSong+scrollamnt, 47);
-			printw("%d", scrollamnt);
-			mvwprintw(stat, 1, 1, "%s", scrollcname);
-
-		}
-	
-};
 
 int main(int argc, char** argv) {
 	Mix_Music* music;
@@ -55,9 +37,10 @@ int main(int argc, char** argv) {
 		}
 	}
 	ITEM** items;
-	int c;
+	int c = 12;
 	MENU* menu;
 	ITEM * cur_it;
+	pthread_t thread;
 	signal(SIGQUIT, sigHandler);
 	initscr();
 	cbreak();
@@ -66,6 +49,7 @@ int main(int argc, char** argv) {
 	keypad(stdscr, true);
 	WINDOW *main;
 	WINDOW *stat;
+	nodelay(stdscr, true);
 	char*playingSong = calloc(1, 1);
 	refresh();
 	int width = COLS/3, height = LINES/1.3, x = (COLS-width)/2, y = (LINES-height)/2;
@@ -109,22 +93,69 @@ int main(int argc, char** argv) {
 	char scrollcname[48];
 	bool goingright = true;
 	int sat = 1;
+	int framecount = 0;
+	bool ends = false;
+	int count = 0;
 	
 	while(true) {
-		wclear(stat);
+		framecount++;
+		werase(stat);
 		wborder(stat, 0,0,0,0, 0,0,0,0);
-	/*	if(strlen(playingSong) < 48) {
+		if(strlen(playingSong) < 48) {
+			ends = false;
 		mvwprintw(stat, 1, 1, "%s", playingSong);
 		} else {
-			scrollamnt+=sat;
-			if(scrollamnt > strlen(playingSong)-47) sat=-1;
-			if(scrollamnt <1) sat=1;
+			/*
+			if(!ends) {
+				ends = true;
+				playingSong = realloc(playingSong, strlen(playingSong)+7);
+				memmove(playingSong+3, playingSong, strlen(playingSong)+4);
+				playingSong[0] = ' ';
+				playingSong[1] = ' ';
+				playingSong[2] = ' ';
+				strcat(playingSong, "   ");
+			
+			}*/
+			//usleep(100000);
+			
+			if(scrollamnt > strlen(playingSong)-47){
+			if(!ends) {
+				ends = true;
+				count = 0;
+			}
+			if(count > 5) {
+				ends = false;
+			} else {
+				count++;
+			}
+				sat=-1;
+			}
+			if(scrollamnt <1){
+			if(!ends) {
+				ends = true;
+				count = 0;
+			}
+			if(count > 5) {
+				ends = false;
+			} else {
+				count++;
+			}
+
+				sat=1;
+			}
+			if(framecount > 2000) {
+				if(!ends) {
+					scrollamnt+=sat;
+				}
+				framecount = 0;
+			}
 			strncpy(scrollcname, playingSong+scrollamnt, 47);
-			printw("%d", scrollamnt);
 			mvwprintw(stat, 1, 1, "%s", scrollcname);
 
-		}*/
-		scrollname(stat, playingSong);
+		}
+		c = getch();
+		wrefresh(stat);
+		//if(c!=ERR) {
 		attron(A_ITALIC);
 		mvprintw(0, 0, "Stopify");
 		attroff(A_ITALIC);
@@ -132,11 +163,9 @@ int main(int argc, char** argv) {
 
 		box(main, 0, 0);
 		wrefresh(main);
-		wrefresh(stat);
 
-		c = getch();
 
-		switch(c) {
+	switch(c) {
 			case 's': 
 				menu_driver(menu, REQ_DOWN_ITEM);
 				break;
@@ -178,7 +207,8 @@ int main(int argc, char** argv) {
 		}
 
 		refresh();
-	}
+		}
+//	}
 	free_menu(menu);
 	endwin();
 }
