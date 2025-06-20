@@ -11,17 +11,83 @@
 
 #define SIZE_ARRAY(a) (sizeof(a)/sizeof(a[0]))
 
+
+char* readfile(FILE *f) {
+  // f invalid? fseek() fail?
+  if (f == NULL || fseek(f, 0, SEEK_END)) {
+    return NULL;
+  }
+
+  long length = ftell(f);
+  rewind(f);
+  // Did ftell() fail?  Is the length too long?
+  if (length == -1 || (unsigned long) length >= SIZE_MAX) {
+    return NULL;
+  }
+
+  // Convert from long to size_t
+  size_t ulength = (size_t) length;
+  char *buffer = (char*)malloc(ulength + 1);
+  // Allocation failed? Read incomplete?
+  if (buffer == NULL || fread(buffer, 1, ulength, f) != ulength) {
+    free(buffer);
+    return NULL;
+  }
+  buffer[ulength] = '\0'; // Now buffer points to a string
+
+  return buffer;
+}
+
+
+
+
 void sigHandler(int s) {
 	endwin();
 	quick_exit(0);
 }
 
+
 Mix_Music* music;
 bool willloop = false;
+char **queue;
+int queueLen = 0;
+MENU* menu;
+char*playingSong = "(None)";
+char* mspath = 0;
+
+char* argv1;
+
+float msicdur;
+float pos;
+
 
 void loop() {
 	if(willloop) 
 		Mix_PlayMusic(music, 0);
+	else {
+		if(queueLen <= 0) {
+			queueLen = 0;
+			return;
+		}
+				queueLen--;
+				playingSong=malloc(strlen(queue[0])+1);
+				strcpy(playingSong, queue[0]);
+				mspath = malloc(strlen(argv1)+strlen(queue[0])+2);
+				strcpy(mspath, argv1);
+				strcat(mspath, "/");
+				strcat(mspath, queue[0]);
+				//printw("%s", mspath);
+				music = Mix_LoadMUS(mspath);
+				Mix_PlayMusic(music, 0);
+				msicdur = Mix_MusicDuration(music);
+				pos = Mix_GetMusicPosition(music)/msicdur;
+	/*	for(int i = 1; i<queueLen+1; i++) {
+			queue[i-1] = queue[i];
+		}
+*/
+		memmove(queue, queue+1, queueLen*sizeof(char*));
+		queue = realloc(queue, (queueLen)*sizeof(char*)+1);
+	}
 }
 
 char **choices = {
@@ -29,6 +95,8 @@ char **choices = {
 
 
 int main(int argc, char** argv) {
+	argv1 = argv[1];
+	queue=malloc(sizeof(char*));
 	//printf("");
 	SDL_Init(SDL_INIT_AUDIO);
 	Mix_Init(MIX_INIT_MP3);
@@ -47,7 +115,6 @@ int main(int argc, char** argv) {
 	}
 	ITEM** items;
 	int c = 12;
-	MENU* menu;
 	ITEM * cur_it;
 	signal(SIGQUIT, sigHandler);
 	initscr();
@@ -59,32 +126,53 @@ int main(int argc, char** argv) {
 	WINDOW *stat;
 	nodelay(stdscr, true);
 	int half = COLS/3-2;
-	char*playingSong = "(None)";
 	refresh();
-	int width = COLS/3, height = LINES/1.3, x = (COLS-width)/2, y = (LINES-height)/2;
+	//int width = COLS/3, height = LINES/1.3, x = (COLS-width)/2, y = (LINES-height)/2;
+	int width = COLS/3, height = LINES, x = (COLS-half)-COLS/6-1 , y = 0;
 	main = newwin(height, width, y, x);
 	//stat = newwin(6, 50, LINES-6, 0);
-	stat = newwin(4, half+2, LINES-4, 0);
+	stat = newwin(4, /*half+2*/ x, LINES-4, 0);
 	box(main, 0, 0);
 
 	wrefresh(main);
 	wrefresh(stat);
 	//choice = SIZE_ARRAY(choices);
 	items = calloc(choice+1, sizeof(ITEM*));
+	ITEM **dMenuItems = calloc(4, sizeof(ITEM*));
+	MENU* mMenu;
+	dMenuItems[0] = new_item("All", "");
+	dMenuItems[1] = new_item("Playlists", "");
+	dMenuItems[2] = new_item("Exit", "");
 	for(int i = 0; i < choice; ++i)
         items[i] = new_item(choices[i], "");
 	items[choice] = (ITEM *)NULL;
 
+	char*plistn;
+	FILE*fptr;
+	char* fpath = malloc(7 + strlen(argv1));
+	strcpy(fpath, argv1);
+	strcat(fpath, ".plists");
+
+	fptr = fopen(fpath, "r");
+	plistn = readfile(fptr);
+
 	menu = new_menu(items);
+
+	mMenu = new_menu(dMenuItems);
 
 	set_menu_win(menu, main);
 	set_menu_format(menu, height-2, 1);
 	set_menu_sub(menu, derwin(main, 0, 0, 1, 0));
 	set_menu_pad(menu, 1);
 
-	char* mspath = 0;
+	set_menu_win(mMenu, stdscr);
+	set_menu_format(mMenu, 5, 1);
+	set_menu_sub(mMenu, derwin(stdscr, 0, 0, 3, 0));
+	set_menu_pad(mMenu, 1);
+
 	
 	post_menu(menu);
+	post_menu(mMenu);
 	wrefresh(main);
 	refresh();
 
@@ -106,12 +194,28 @@ int main(int argc, char** argv) {
 	int framecount = 0;
 	bool ends = false;
 	int count = 0;
+	char* songnamecut;
 
 	WINDOW* textbox;
 
-	float msicdur;
-	float pos;
+	WINDOW* queueView;
+	queueView = newwin( LINES, half/2, 0,COLS-half/2);
+
+	MENU*test;
+	ITEM**testItems;
+	testItems = malloc(sizeof(ITEM**));
+	testItems[0] = new_item("undertale.mp3", "");
+	test = new_menu(testItems);
+
+
+	set_menu_win(test, main);
+	set_menu_format(test, height-2, 1);
+	set_menu_sub(test, derwin(main, 0, 0, 1, 0));
+	set_menu_pad(test, 1);
+
+
 	float absPos = -1;
+	int curMenu = 0;
 	char name[50];
 	char *shellcmd;
 	Mix_HookMusicFinished(loop);
@@ -120,6 +224,8 @@ int main(int argc, char** argv) {
 	init_pair(1, COLOR_WHITE, COLOR_WHITE);
 	init_pair(2, COLOR_GREEN, -1);
 	while(true) {
+	LINES = getmaxy(stdscr);
+	COLS = getmaxx(stdscr);
 		if(willloop) {
 			mvprintw(1, 0, "Looping    ");
 		} else {
@@ -136,19 +242,19 @@ int main(int argc, char** argv) {
 		werase(stat);
 		wborder(stat, 0,0,0,0, 0,0,0,0);
 	//	mvwprintw(stat, 2, 1, "________________________________________________");
-		for(int j = 0; j<half; j++) {
+		for(int j = 0; j<x-2; j++) {
 			mvwprintw(stat, 2, 1+j, "_");
 		}
 		//mvwprintw(stat, 2, 1+pos*48, "#");
 		wattron(stat, COLOR_PAIR(1));
-		mvwprintw(stat, 2, 1+pos*half, "#");
+		mvwprintw(stat, 2, 1+pos*(x-2), "#");
 		wattroff(stat, COLOR_PAIR(1));
 		if(strlen(playingSong) < half) {
 			ends = false;
 				mvwprintw(stat, 1, 1, "%s", playingSong);
 		} else {
 			/*
-			if(!ends) {
+		if(!ends) {
 				ends = true;
 				playingSong = realloc(playingSong, strlen(playingSong)+7);
 				memmove(playingSong+3, playingSong, strlen(playingSong)+4);
@@ -208,21 +314,14 @@ int main(int argc, char** argv) {
 		box(main, 0, 0);
 		wrefresh(main);
 
+		if(c == '\t') {
+			curMenu = !curMenu;
+		}
+		if(c == '.') {
+			loop();
+		}
 
-	switch(c) {
-			case 's': 
-				menu_driver(menu, REQ_DOWN_ITEM);
-				break;
-			case 'w': 
-				menu_driver(menu, REQ_UP_ITEM);
-				break;
-
-			case  KEY_DOWN: 
-				menu_driver(menu, REQ_DOWN_ITEM);
-				break;
-			case KEY_UP: 
-				menu_driver(menu, REQ_UP_ITEM);
-				break;
+		switch(c) {
 
 			case KEY_LEFT:
 			case 'a': 
@@ -242,6 +341,68 @@ int main(int argc, char** argv) {
 			case 'd': 
 				Mix_SetMusicPosition(fmin(fmax(absPos+5, 0), msicdur));
 				break;
+			case 'l':
+				willloop = !willloop;
+				break;
+			case ' ': 
+				if(Mix_PausedMusic()) {
+					Mix_ResumeMusic();
+				} else {
+					Mix_PauseMusic();
+				}
+				break;
+
+			default:
+				break;
+
+		}
+
+
+	if(!strcmp(item_name(current_item(mMenu)), "All") && curMenu) {
+	switch(c) {
+			case 's': 
+				menu_driver(menu, REQ_DOWN_ITEM);
+				break;
+			case 'w': 
+				menu_driver(menu, REQ_UP_ITEM);
+				break;
+
+
+			case 'q':
+				queueLen++;
+				queue = realloc(queue, queueLen*sizeof(char*)+1);
+
+
+				queue[queueLen-1] = malloc(strlen(item_name(current_item(menu)))+1);
+				queue[queueLen-1] = (char*)item_name(current_item(menu));
+				break;
+			case  KEY_DOWN: 
+				menu_driver(menu, REQ_DOWN_ITEM);
+				break;
+			case KEY_UP: 
+				menu_driver(menu, REQ_UP_ITEM);
+				break;
+
+			/*
+			case KEY_LEFT:
+			case 'a': 
+				if(Mix_PlayingMusic()) {
+					Mix_SetMusicPosition(fmin(fmax(absPos-5, 0), msicdur));
+				} else {
+				if(mspath == 0) break;
+
+				music = Mix_LoadMUS(mspath);
+				Mix_PlayMusic(music, 0);
+				Mix_SetMusicPosition(fmax(msicdur-5, 0));
+
+
+				}
+				break;
+			case KEY_RIGHT:
+			case 'd': 
+				Mix_SetMusicPosition(fmin(fmax(absPos+5, 0), msicdur));
+				break;
+			*/
 			case '\n':
 				playingSong=malloc(strlen(item_name(current_item(menu)))+1);
 				strcpy(playingSong, item_name(current_item(menu)));
@@ -255,6 +416,7 @@ int main(int argc, char** argv) {
 				msicdur = Mix_MusicDuration(music);
 				pos = Mix_GetMusicPosition(music)/msicdur;
 				break;
+				/*
 			case ' ': 
 				if(Mix_PausedMusic()) {
 					Mix_ResumeMusic();
@@ -262,6 +424,7 @@ int main(int argc, char** argv) {
 					Mix_PauseMusic();
 				}
 				break;
+				*/
 			case 'c':
 			/*	textbox = newwin(3, 40, LINES/2-2, COLS/2-20);
 				box(textbox, 0, 0);
@@ -291,12 +454,80 @@ int main(int argc, char** argv) {
 				// converts but doesnt fit the program
 				break;
 
+				/*
 			case 'l':
 				willloop = !willloop;
 				break;
+				*/
 			default:
 			break;
 		}
+		} else if(!strcmp(item_name(current_item(mMenu)), "Playlists") && curMenu) {
+			switch(c) {
+				case '\n':
+					playingSong=malloc(strlen(item_name(current_item(test)))+1);
+					strcpy(playingSong, item_name(current_item(test)));
+					mspath = malloc(strlen(argv[1])+strlen((item_name(current_item(test))))+2);
+					strcpy(mspath, argv[1]);
+					strcat(mspath, "/");
+					strcat(mspath, item_name(current_item(test)));
+					//printw("%s", mspath);
+					music = Mix_LoadMUS(mspath);
+					Mix_PlayMusic(music, 0);
+					msicdur = Mix_MusicDuration(music);
+					pos = Mix_GetMusicPosition(music)/msicdur;
+					break;
+				default:
+					break;
+			}
+		}
+
+	else {
+			switch(c) {
+				case KEY_DOWN:
+				case 's':
+					menu_driver(mMenu, REQ_DOWN_ITEM);
+					break;
+				case KEY_UP:
+				case 'w':
+					menu_driver(mMenu, REQ_UP_ITEM);
+					break;
+				case '\n':
+					if(!strcmp(item_name(current_item(mMenu)), "Exit")) {
+						endwin();
+						return 0;
+					} else if(!strcmp(item_name(current_item(mMenu)), "All")) {
+						curMenu = !curMenu;
+					}
+					else if(!strcmp(item_name(current_item(mMenu)), "Playlists")) {
+						curMenu = !curMenu;
+					}
+
+					break;
+				default:
+					break;
+			}
+		if(!strcmp(item_name(current_item(mMenu)), "All")) {
+			post_menu(menu);
+		}else if(!strcmp(item_name(current_item(mMenu)), "Playlists")){
+			unpost_menu(menu);
+			unpost_menu(test);
+			post_menu(test);
+			refresh();
+		} else {
+			unpost_menu(menu);
+			unpost_menu(test);
+		}
+		}
+		werase(queueView);
+		songnamecut = malloc(half/2-2);
+		for(int i = 0; i<queueLen; i++) {
+			strncpy(songnamecut, queue[i], half/2-2);
+			mvwprintw(queueView, 1+i, 1, "%s", songnamecut);
+		}
+		box(queueView, 0, 0);
+		mvwprintw(queueView, 0, 1, "Queue:");
+		wrefresh(queueView);
 
 		refresh();
 		}
