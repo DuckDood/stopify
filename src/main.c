@@ -758,9 +758,9 @@ while (fgets(line, filesize, fptr)) {
 		while((dircont = readdir(dir)) != NULL) {
 			if(dircont->d_type == DT_LNK && strcmp(dircont->d_name, ".plists")) {
 				count++;
-				mvprintw(1, 0, "%lu", sizeof(ITEM*)*(count)+1);
+				/*mvprintw(1, 0, "%lu", sizeof(ITEM*)*(count)+1);
 				refresh();
-				usleep(300000);
+				usleep(300000);*/
 				CplayItems=realloc(CplayItems, sizeof(ITEM*)*(count)+1);
 				CplayItems[count-1] = new_item(dircont->d_name, "");
 				CplayItems[count] = NULL;
