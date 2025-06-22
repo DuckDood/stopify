@@ -104,6 +104,10 @@ char **choices = {
 
 int main(int argc, char** argv) {
 	argv1 = argv[1];
+	if(argv[1][strlen(argv[1]-1)] != '/') {
+		strcat(argv[1], "/");
+		strcat(argv1, "/");
+	}
 	queue=malloc(sizeof(char*));
 	//printf("");
 	SDL_Init(SDL_INIT_AUDIO);
@@ -984,11 +988,21 @@ while (fgets(pline, plsize, playptr)) {
 				menu_driver(playlistNames, REQ_DOWN_ITEM);
 				menu_driver(playlistNames, REQ_UP_ITEM);
 				menu_driver(playlistNames, REQ_FIRST_ITEM);
+
+			unpost_menu(menu);
+			unpost_menu(likeSongs);
+			if(!inplist) {
+				post_menu(playlistNames);
+			}
+
+		wrefresh(main);
 				break;
 			case 'r':
+				//line = malloc(strlen(argv1) + 1 + strlen(playlists[item_index(current_item(currentPlaylist))].dirname));
 				strcpy(line, argv1);
 				strcat(line, "/");
-				strcat(line, playlists[item_index(current_item(currentPlaylist))].dirname);
+				//mvprintw(0,0,"%s", playlists[item_index(current_item(playlistNames))].dirname);
+				strcat(line, playlists[item_index(current_item(playlistNames))].dirname);
 				DIR*dr = opendir(line);
 				struct dirent * nextfile;
 				char filepath[256];
@@ -1000,10 +1014,13 @@ while (fgets(pline, plsize, playptr)) {
 
         // build the path for each file in the folder
         sprintf(filepath, "%s/%s", line, nextfile->d_name);
+        //printw("%s", filepath);
+		//refresh();
+		//sleep(1);
+
         remove(filepath);
     }
     closedir(dr);
-
 
 				
 				break;
