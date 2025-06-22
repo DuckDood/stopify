@@ -40,7 +40,11 @@ char* readfile(FILE *f) {
 
 struct playlist {
 	char* name;
+	/*
 	MENU* menu;
+	ITEM** items;
+	*/
+	char* dirname;
 };
 
 
@@ -105,16 +109,21 @@ int main(int argc, char** argv) {
 	Mix_Init(MIX_INIT_MP3);
 	DIR* dir;
 	int choice = 0;
-	dir = opendir(argv[1]);
 	if(access(strcat(strdup(argv1), ".plists"), F_OK)) {
 		FILE*f;
 		f = fopen(strcat(strdup(argv1), ".plists"), "w");
 		fclose(f);
 	}
+	if(access(strcat(strdup(argv1), ".play"), F_OK)) {
+		FILE*f;
+		f = fopen(strcat(strdup(argv1), ".play"), "w");
+		fclose(f);
+	}
 	struct dirent *dircont;
+	dir = opendir(argv[1]);
 	if(dir) {
 		while((dircont = readdir(dir)) != NULL) {
-			if(dircont->d_type == DT_REG ) {
+			if(dircont->d_type == DT_REG || dircont->d_type == DT_LNK && strcmp(dircont->d_name, ".plists")) {
 				choice++;
 				choices=realloc(choices, sizeof(char*)*(choice));
 				choices[choice-1] = dircont->d_name;
@@ -146,28 +155,88 @@ int main(int argc, char** argv) {
 	wrefresh(stat);
 	//choice = SIZE_ARRAY(choices);
 	items = calloc(choice+1, sizeof(ITEM*));
-	ITEM **dMenuItems = calloc(4, sizeof(ITEM*));
+	ITEM **dMenuItems = calloc(5, sizeof(ITEM*));
 	MENU* mMenu;
 	dMenuItems[0] = new_item("All", "");
 	dMenuItems[1] = new_item("Liked", "");
-	dMenuItems[2] = new_item("Exit", "");
-	dMenuItems[3] = NULL;
+	dMenuItems[2] = new_item("Playlists", "");
+	dMenuItems[3] = new_item("Exit", "");
+	dMenuItems[4] = NULL;
 	for(int i = 0; i < choice; ++i)
         items[i] = new_item(choices[i], "");
 	items[choice] = (ITEM *)NULL;
 
 	char*plistn;
 	FILE*fptr;
+	FILE*playptr;
 	char* fpath = malloc(7 + strlen(argv1));
 	strcpy(fpath, argv1);
 	strcat(fpath, ".plists");
+	char*playpath = malloc(6+strlen(argv1));
+	strcpy(playpath, argv1);
+	strcat(playpath, ".play");
+	bool pname = true;
 
 	fptr = fopen(fpath, "r");
+	playptr = fopen(playpath, "r");
 	plistn = readfile(fptr);
 
 	menu = new_menu(items);
 
+	fseek(playptr, 0L, SEEK_END);
+	int plsize = ftell(playptr);
+	rewind(playptr);
+	char* pline = malloc(plsize);
+
+
+
 	mMenu = new_menu(dMenuItems);
+	int plistcount = 0;
+	ITEM** tempItems = calloc(1, sizeof(ITEM*));
+	int titemscnt = 0;
+	struct playlist* playlists = malloc(sizeof(struct playlist)*(plistcount));
+
+while (fgets(pline, plsize, playptr)) {
+//	printw("%s", pline);
+//	refresh();
+//	sleep(1);
+    pline[strcspn(pline, "\n")] = '\0'; // safely remove newline
+	if(pname) {
+		plistcount++;
+		playlists = realloc(playlists, sizeof(struct playlist) * plistcount);
+		playlists[plistcount-1].name = strdup(pline);
+
+	} else {
+		playlists[plistcount-1].dirname = strdup(pline);
+
+	}
+	pname = !pname;
+}
+
+/*
+	plistcount++;
+	playlists = realloc(playlists, sizeof(struct playlist) * plistcount);
+	playlists[plistcount-1].name = "undertale";
+	playlists[plistcount-1].dirname = ".undertale";
+
+	plistcount++;
+	playlists = realloc(playlists, sizeof(struct playlist) * plistcount);
+	playlists[plistcount-1].name = "mario";
+	playlists[plistcount-1].dirname = ".mario";
+	*/
+	MENU* playlistNames = malloc(sizeof(MENU));
+	ITEM** pnameItems = calloc(2, sizeof(ITEM*));
+	for(int i = 0; i<plistcount; i++) {
+	pnameItems = realloc(pnameItems, sizeof(ITEM*)*(i+1)+1);
+	pnameItems[i] = new_item(strdup(playlists[i].name), "");
+	pnameItems[i+1] = NULL;
+	}
+	playlistNames = new_menu(pnameItems);
+
+	set_menu_win(playlistNames, main);
+	set_menu_format(playlistNames, height-2, 1);
+	set_menu_sub(playlistNames, derwin(main, 0, 0, 1, 0));
+	set_menu_pad(playlistNames, 1);
 
 	set_menu_win(menu, main);
 	set_menu_format(menu, height-2, 1);
@@ -175,7 +244,7 @@ int main(int argc, char** argv) {
 	set_menu_pad(menu, 1);
 
 	set_menu_win(mMenu, stdscr);
-	set_menu_format(mMenu, 5, 1);
+	set_menu_format(mMenu, 10, 1);
 	set_menu_sub(mMenu, derwin(stdscr, 0, 0, 3, 0));
 	set_menu_pad(mMenu, 1);
 
@@ -211,7 +280,12 @@ int main(int argc, char** argv) {
 	queueView = newwin( LINES, half/2, 0,COLS-half/2);
 
 	MENU*likeSongs;
-	ITEM**likeSongsItems = malloc(4*sizeof(ITEM*));
+	ITEM**likeSongsItems = calloc(4*sizeof(ITEM*), 1);
+
+	MENU*currentPlaylist;
+	ITEM**CplayItems = malloc(sizeof(ITEM*));
+
+
 	fseek(fptr, 0L, SEEK_END);
 	int filesize = ftell(fptr);
 	rewind(fptr);
@@ -253,6 +327,9 @@ while (fgets(line, filesize, fptr)) {
 	int curMenu = 0;
 	char name[50];
 	char *shellcmd;
+
+	bool inplist = false;
+
 	Mix_HookMusicFinished(loop);
 	start_color();
 	use_default_colors();
@@ -285,7 +362,7 @@ while (fgets(line, filesize, fptr)) {
 		wattron(stat, COLOR_PAIR(1));
 		mvwprintw(stat, 2, 1+pos*(x-2), "#");
 		wattroff(stat, COLOR_PAIR(1));
-		if(strlen(playingSong) < half) {
+		if(strlen(playingSong) < x) {
 			ends = false;
 				mvwprintw(stat, 1, 1, "%s", playingSong);
 		} else {
@@ -302,7 +379,7 @@ while (fgets(line, filesize, fptr)) {
 			}*/
 			//usleep(100000);
 			
-			if(scrollamnt > strlen(playingSong)-(half-4)){
+			if(scrollamnt > strlen(playingSong)-(x-4)){
 			if(!ends) {
 				ends = true;
 				count = 0;
@@ -333,7 +410,8 @@ while (fgets(line, filesize, fptr)) {
 				}
 				framecount = 0;
 			}
-			strncpy(scrollcname, playingSong+scrollamnt, half-5);
+			strncpy(scrollcname, playingSong+scrollamnt, x-5);
+			scrollcname[x-5] = '\0';
 			mvwprintw(stat, 1, 1, "%s", scrollcname);
 
 		}
@@ -387,6 +465,9 @@ while (fgets(line, filesize, fptr)) {
 					Mix_PauseMusic();
 				}
 				break;
+			case 'm':
+				curMenu = 0;
+				break;
 
 			default:
 				break;
@@ -429,7 +510,7 @@ while (fgets(line, filesize, fptr)) {
 				fflush(lksongsfptr);
 				fclose(lksongsfptr);
 
-	likeSongsItems = malloc(4*sizeof(ITEM*));
+	likeSongsItems = calloc(4*sizeof(ITEM*), 1);
 	fseek(fptr, 0L, SEEK_END);
 	int filesize = ftell(fptr);
 	rewind(fptr);
@@ -614,7 +695,7 @@ while (fgets(line, filesize, fptr)) {
 				fflush(lksongsfptr);
 				fclose(lksongsfptr);
 
-	likeSongsItems = malloc(4*sizeof(ITEM*));
+	likeSongsItems = calloc(4*sizeof(ITEM*), 1);
 	fseek(fptr, 0L, SEEK_END);
 	int filesize = ftell(fptr);
 	rewind(fptr);
@@ -652,6 +733,149 @@ while (fgets(line, filesize, fptr)) {
 			}
 		}
 
+	else if(!strcmp(item_name(current_item(mMenu)), "Playlists") && curMenu) {
+		if(!inplist) {
+		switch(c) {
+
+				case KEY_DOWN:
+				case 's':
+					menu_driver(playlistNames, REQ_DOWN_ITEM);
+					break;
+				case KEY_UP:
+				case 'w':
+					menu_driver(playlistNames, REQ_UP_ITEM);
+					break;
+
+				case '\n':
+				strcpy(line, argv1);
+				strcat(line, "/");
+				strcat(line, playlists[item_index(current_item(playlistNames))].dirname);
+				CplayItems = malloc(0);
+
+	dir = opendir(line);
+	int count = 0;
+	if(dir) {
+		while((dircont = readdir(dir)) != NULL) {
+			if(dircont->d_type == DT_LNK && strcmp(dircont->d_name, ".plists")) {
+				count++;
+				mvprintw(1, 0, "%lu", sizeof(ITEM*)*(count)+1);
+				refresh();
+				usleep(300000);
+				CplayItems=realloc(CplayItems, sizeof(ITEM*)*(count)+1);
+				CplayItems[count-1] = new_item(dircont->d_name, "");
+				CplayItems[count] = NULL;
+			}
+		}
+	}
+					currentPlaylist = new_menu(CplayItems);
+	set_menu_win(currentPlaylist, main);
+	set_menu_format(currentPlaylist, height-2, 1);
+	set_menu_sub(currentPlaylist, derwin(main, 0, 0, 1, 0));
+	set_menu_pad(currentPlaylist, 1);
+					werase(main);
+					post_menu(currentPlaylist);
+
+					inplist = true;
+					break;
+
+				default:
+					break;
+		}
+		
+	} else {
+
+		switch(c) {
+
+				case KEY_DOWN:
+				case 's':
+					menu_driver(currentPlaylist, REQ_DOWN_ITEM);
+					break;
+				case KEY_UP:
+				case 'w':
+					menu_driver(currentPlaylist, REQ_UP_ITEM);
+					break;
+
+				case '\n':
+				playingSong=malloc(strlen(item_name(current_item(currentPlaylist)))+1);
+				strcpy(playingSong, item_name(current_item(currentPlaylist)));
+				mspath = malloc(strlen(argv[1])+strlen((item_name(current_item(currentPlaylist))))+2);
+				strcpy(mspath, argv[1]);
+				strcat(mspath, "/");
+				strcat(mspath, item_name(current_item(currentPlaylist)));
+				//printw("%s", mspath);
+				music = Mix_LoadMUS(mspath);
+				Mix_PlayMusic(music, 0);
+				msicdur = Mix_MusicDuration(music);
+				pos = Mix_GetMusicPosition(music)/msicdur;
+					break;
+			case 'q':
+				queueLen++;
+				queue = realloc(queue, queueLen*sizeof(char*)+1);
+
+
+				queue[queueLen-1] = malloc(strlen(item_name(current_item(currentPlaylist)))+1);
+				queue[queueLen-1] = (char*)item_name(current_item(currentPlaylist));
+				break;
+			case 'h' /* h for heart <3*/
+				/* fuck that heart shit i got too many crashes h is for hatred*/
+				:
+				
+				rewind(fptr);
+			
+			/*	for(int i = 0; i<likeSongCount; i++) {
+					//if(!strcmp(item_name(current_item(menu)), item_name(likeSongsItems[i]))) {
+					//	brkloop = true;
+					//}
+				}*/
+			/*	if(brkloop) {
+					brkloop = false;
+					break;
+				}*/
+			//	likeSongCount++;
+   			//	likeSongsItems = realloc(likeSongsItems, likeSongCount * sizeof(ITEM*));
+   			//	likeSongsItems[likeSongCount - 1] = current_item(menu);
+			//	likeSongsItems[likeSongCount] = NULL;
+				char* argdup = malloc(strlen(argv1));
+				argdup = strdup(argv1);
+				FILE*lksongsfptr = fopen(strcat(strdup(argv1), ".plists"), "a");
+				fprintf(lksongsfptr, "%s\n", item_name(current_item(currentPlaylist)));
+				fflush(lksongsfptr);
+				fclose(lksongsfptr);
+
+	likeSongsItems = calloc(4*sizeof(ITEM*), 1);
+	fseek(fptr, 0L, SEEK_END);
+	int filesize = ftell(fptr);
+	rewind(fptr);
+	char* line = malloc(filesize);
+	int likeSongCount = 0;
+while (fgets(line, filesize, fptr)) {
+	// here to 4 lines below is generated by chatGPT because new_item is fucking stupid (i know why it needs strdup, but WHY did they make it NEED strdup?????)
+    line[strcspn(line, "\n")] = '\0'; // safely remove newline
+    likeSongCount++;
+    likeSongsItems = realloc(likeSongsItems, likeSongCount * sizeof(ITEM*));
+    likeSongsItems[likeSongCount - 1] = new_item(strdup(line), "");
+}
+
+
+	likeSongsItems[likeSongCount] = NULL;
+	likeSongs = new_menu(likeSongsItems);
+
+
+	set_menu_win(likeSongs, main);
+	set_menu_format(likeSongs, height-2, 1);
+	set_menu_sub(likeSongs, derwin(main, 0, 0, 1, 0));
+	set_menu_pad(likeSongs, 1);
+			//unpost_menu(likeSongs);
+			//set_menu_items(likeSongs, likeSongsItems);
+				break;
+
+				default:
+					break;
+		}
+		
+	}
+
+	}
 	else {
 			switch(c) {
 				case KEY_DOWN:
@@ -672,20 +896,40 @@ while (fgets(line, filesize, fptr)) {
 					else if(!strcmp(item_name(current_item(mMenu)), "Liked")) {
 						curMenu = !curMenu;
 					}
+					else if(!strcmp(item_name(current_item(mMenu)), "Playlists")) {
+						curMenu = !curMenu;
+					}
 
 					break;
 				default:
 					break;
 			}
+		unpost_menu(menu);
+		unpost_menu(likeSongs);
+		unpost_menu(playlistNames);
+		inplist = false;
+		//unpost_menu(currentPlaylist);
+
 		if(!strcmp(item_name(current_item(mMenu)), "All")) {
 			unpost_menu(menu);
+			unpost_menu(likeSongs);
 			post_menu(menu);
 		}else if(!strcmp(item_name(current_item(mMenu)), "Liked")){
 			unpost_menu(menu);
 			unpost_menu(likeSongs);
 			post_menu(likeSongs);
+		} else if(!strcmp(item_name(current_item(mMenu)), "Playlists")) {
+			unpost_menu(menu);
+			unpost_menu(likeSongs);
+			if(!inplist) {
+				post_menu(playlistNames);
+			} else {
+				post_menu(currentPlaylist);
+			}
+		//	mvwprintw(main, 1, 1, "hi");
 		} else {
 			unpost_menu(menu);
+			mvwprintw(main, 1, 1, "Dont leave :(");
 			unpost_menu(likeSongs);
 		}
 		}
