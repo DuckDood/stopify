@@ -925,7 +925,7 @@ while (fgets(pline, plsize, playptr)) {
 		}
 	}
 				CplayItems[count] = NULL;
-				free_menu(currentPlaylist);
+				//free_menu(currentPlaylist);
 					currentPlaylist = new_menu(CplayItems);
 	set_menu_win(currentPlaylist, main);
 	set_menu_format(currentPlaylist, height-2, 1);
