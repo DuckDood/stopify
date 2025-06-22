@@ -888,7 +888,14 @@ while (fgets(pline, plsize, playptr)) {
 	pnameItems[i] = new_item(strdup(playlists[i].name), "");
 	pnameItems[i+1] = NULL;
 	}
-	set_menu_items(playlistNames, pnameItems);
+	pnameItems[plistcount] = NULL;
+	//set_menu_items(playlistNames, pnameItems);
+	playlistNames = new_menu(pnameItems);
+	set_menu_win(playlistNames, main);
+	set_menu_format(playlistNames, height-2, 1);
+	set_menu_sub(playlistNames, derwin(main, 0, 0, 1, 0));
+	set_menu_pad(playlistNames, 1);
+	//sleep(1);
 	//playlistNames = new_menu(pnameItems);
 	post_menu(playlistNames);
 
@@ -918,6 +925,7 @@ while (fgets(pline, plsize, playptr)) {
 		}
 	}
 				CplayItems[count] = NULL;
+				free_menu(currentPlaylist);
 					currentPlaylist = new_menu(CplayItems);
 	set_menu_win(currentPlaylist, main);
 	set_menu_format(currentPlaylist, height-2, 1);
