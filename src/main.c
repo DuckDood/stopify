@@ -1,4 +1,5 @@
 #include <ncurses.h>
+#include <sys/stat.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <SDL2/SDL_mixer.h>
@@ -123,7 +124,7 @@ int main(int argc, char** argv) {
 	dir = opendir(argv[1]);
 	if(dir) {
 		while((dircont = readdir(dir)) != NULL) {
-			if(dircont->d_type == DT_REG || dircont->d_type == DT_LNK && strcmp(dircont->d_name, ".plists")) {
+			if((dircont->d_type == DT_REG || dircont->d_type == DT_LNK) && strcmp(dircont->d_name, ".plists") && strcmp(dircont->d_name, ".play") ) {
 				choice++;
 				choices=realloc(choices, sizeof(char*)*(choice));
 				choices[choice-1] = dircont->d_name;
@@ -163,7 +164,7 @@ int main(int argc, char** argv) {
 	dMenuItems[3] = new_item("Exit", "");
 	dMenuItems[4] = NULL;
 	for(int i = 0; i < choice; ++i)
-        items[i] = new_item(choices[i], "");
+        items[i] = new_item(strdup(choices[i]), "");
 	items[choice] = (ITEM *)NULL;
 
 	char*plistn;
@@ -178,11 +179,11 @@ int main(int argc, char** argv) {
 	bool pname = true;
 
 	fptr = fopen(fpath, "r");
-	playptr = fopen(playpath, "r");
 	plistn = readfile(fptr);
 
 	menu = new_menu(items);
 
+	playptr = fopen(playpath, "r");
 	fseek(playptr, 0L, SEEK_END);
 	int plsize = ftell(playptr);
 	rewind(playptr);
@@ -196,6 +197,8 @@ int main(int argc, char** argv) {
 	int titemscnt = 0;
 	struct playlist* playlists = malloc(sizeof(struct playlist)*(plistcount));
 
+plistcount=0;
+pname = true;
 while (fgets(pline, plsize, playptr)) {
 //	printw("%s", pline);
 //	refresh();
@@ -468,6 +471,11 @@ while (fgets(line, filesize, fptr)) {
 			case 'm':
 				curMenu = 0;
 				break;
+			//case 'n':
+			//	werase(main);
+			//	inplist = false;
+			//	continue;
+			//	break;
 
 			default:
 				break;
@@ -477,6 +485,70 @@ while (fgets(line, filesize, fptr)) {
 
 	if(!strcmp(item_name(current_item(mMenu)), "All") && curMenu) {
 	switch(c) {
+			case 'p':
+				textbox = newwin(20, COLS/5, LINES/2-10, COLS/2-COLS/10);
+	set_menu_win(playlistNames, textbox);
+	set_menu_format(playlistNames, height-2, 1);
+	set_menu_sub(playlistNames, derwin(textbox, 0, 0, 1, 0));
+	set_menu_pad(playlistNames, 1);
+
+	post_menu(playlistNames);
+	box(textbox, 0, 0);
+	wrefresh(textbox);
+	//sleep(2);
+	bool selecting = true;
+	int g;
+	nodelay(textbox, true);
+	while(selecting) {
+		g = getch();
+		//printw("%c", g);
+		switch(g) {
+			case '\n':
+				selecting = false;
+				break;
+			case KEY_UP:
+			case 'w':
+				//printw("wi");
+				//refresh();
+				menu_driver(playlistNames, REQ_UP_ITEM);
+				break;
+			case KEY_DOWN:
+			case 'd':
+				//printw("hi");
+				//refresh();
+				menu_driver(playlistNames, REQ_DOWN_ITEM);
+			default:
+				break;
+		}
+		box(textbox, 0, 0);
+		wrefresh(textbox);
+	}
+	char*filep = malloc(strlen(argv1) + strlen(item_name(current_item(menu))) + strlen( playlists[item_index(current_item(playlistNames))].dirname)+1);
+	char*sympath = malloc(strlen(item_name(current_item(menu))) + 3);
+	strcpy(filep, argv1);
+	strcat(filep, playlists[item_index(current_item(playlistNames))].dirname);
+	strcat(filep, "/");
+	strcat(filep, item_name(current_item(menu)));
+
+	strcpy(sympath, "../");
+	strcat(sympath, item_name(current_item(menu)));
+
+	symlink(sympath, filep);
+
+	nodelay(textbox, false);
+
+	unpost_menu(playlistNames);
+	werase(textbox);
+	wrefresh(textbox);
+	delwin(textbox);
+
+	set_menu_win(playlistNames, main);
+	set_menu_format(playlistNames, height-2, 1);
+	set_menu_sub(playlistNames, derwin(main, 0, 0, 1, 0));
+	set_menu_pad(playlistNames, 1);
+				
+
+				break;
 			case 's': 
 				menu_driver(menu, REQ_DOWN_ITEM);
 				break;
@@ -596,7 +668,7 @@ while (fgets(line, filesize, fptr)) {
 				break;
 				*/
 			case 'c':
-			/*	textbox = newwin(3, 40, LINES/2-2, COLS/2-20);
+			/**//*	textbox = newwin(3, 40, LINES/2-2, COLS/2-20);
 				box(textbox, 0, 0);
 				wrefresh(textbox);
 				//nodelay();
@@ -616,10 +688,10 @@ while (fgets(line, filesize, fptr)) {
 				strcat(shellcmd, " &> /dev/null");
 				system(shellcmd);
 				delwin(textbox);
+*/
 
-
-				goto start;
-
+				//goto start;
+/*
 */
 				// converts but doesnt fit the program
 				break;
@@ -746,7 +818,85 @@ while (fgets(line, filesize, fptr)) {
 					menu_driver(playlistNames, REQ_UP_ITEM);
 					break;
 
+				case 'c':
+					line = malloc(strlen(argv1) + 7);
+					strcpy(line, argv1);
+					strcat(line, "/");
+					strcat(line, ".play");
+					FILE*playf = fopen(line, "a");
+
+					char* playname = malloc(39);
+
+					textbox = newwin(3, 40, LINES/2-2, COLS/2-20);
+					box(textbox, 0, 0);
+					wrefresh(textbox);
+					echo();
+					mvwgetnstr(textbox,1,1,playname,39);
+					noecho();
+					werase(textbox);
+					wrefresh(textbox);
+					delwin(textbox);
+
+					char*playname2 = malloc(40);
+					strcpy(playname2, ".");
+					strcat(playname2, playname);
+
+					/*printw("%s\n", playname);
+					printw("%s", playname2);
+					refresh();
+					sleep(1);*/
+					fprintf(playf, "%s\n", playname);
+					fprintf(playf, "%s\n", playname2);
+					fflush(playf);
+
+					strcpy(playname, argv1);
+					strcat(playname, "/");
+					strcat(playname, playname2);
+					fclose(playf);
+					mkdir(playname, 0755);
+					unpost_menu(playlistNames);
+					fclose(playptr);
+
+	playptr = fopen(playpath, "r");
+	fseek(playptr, 0L, SEEK_END);
+	plsize = ftell(playptr);
+	rewind(playptr);
+	pline = malloc(plsize);
+
+plistcount=0;
+pname = true;
+while (fgets(pline, plsize, playptr)) {
+//	printw("%s", pline);
+//	refresh();
+//	sleep(1);
+    pline[strcspn(pline, "\n")] = '\0'; // safely remove newline
+	if(pname) {
+		plistcount++;
+		playlists = realloc(playlists, sizeof(struct playlist) * plistcount);
+		playlists[plistcount-1].name = strdup(pline);
+
+	} else {
+		playlists[plistcount-1].dirname = strdup(pline);
+
+	}
+	pname = !pname;
+}
+
+
+	for(int i = 0; i<plistcount; i++) {
+	pnameItems = realloc(pnameItems, sizeof(ITEM*)*(i+1)+1);
+	pnameItems[i] = new_item(strdup(playlists[i].name), "");
+	pnameItems[i+1] = NULL;
+	}
+	set_menu_items(playlistNames, pnameItems);
+	//playlistNames = new_menu(pnameItems);
+	post_menu(playlistNames);
+
+
+					break;
+
 				case '\n':
+	closedir(dir);
 				strcpy(line, argv1);
 				strcat(line, "/");
 				strcat(line, playlists[item_index(current_item(playlistNames))].dirname);
@@ -767,6 +917,7 @@ while (fgets(line, filesize, fptr)) {
 			}
 		}
 	}
+				CplayItems[count] = NULL;
 					currentPlaylist = new_menu(CplayItems);
 	set_menu_win(currentPlaylist, main);
 	set_menu_format(currentPlaylist, height-2, 1);
@@ -815,6 +966,38 @@ while (fgets(line, filesize, fptr)) {
 
 				queue[queueLen-1] = malloc(strlen(item_name(current_item(currentPlaylist)))+1);
 				queue[queueLen-1] = (char*)item_name(current_item(currentPlaylist));
+				break;
+
+			case 'n':
+				inplist = false;
+				unpost_menu(currentPlaylist);
+				post_menu(playlistNames);
+				wrefresh(main);
+				menu_driver(playlistNames, REQ_DOWN_ITEM);
+				menu_driver(playlistNames, REQ_UP_ITEM);
+				menu_driver(playlistNames, REQ_FIRST_ITEM);
+				break;
+			case 'r':
+				strcpy(line, argv1);
+				strcat(line, "/");
+				strcat(line, playlists[item_index(current_item(currentPlaylist))].dirname);
+				DIR*dr = opendir(line);
+				struct dirent * nextfile;
+				char filepath[256];
+    while ( (nextfile = readdir(dr)) != NULL )
+    {
+        // skip "." and ".." entries
+        if (strcmp(nextfile->d_name, ".")==0 || strcmp(nextfile->d_name, "..")==0)
+            continue;
+
+        // build the path for each file in the folder
+        sprintf(filepath, "%s/%s", line, nextfile->d_name);
+        remove(filepath);
+    }
+    closedir(dr);
+
+
+				
 				break;
 			case 'h' /* h for heart <3*/
 				/* fuck that heart shit i got too many crashes h is for hatred*/
