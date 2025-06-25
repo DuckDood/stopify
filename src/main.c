@@ -154,8 +154,8 @@ int main(int argc, char** argv) {
 	main = newwin(height, width, y, x);
 	//stat = newwin(6, 50, LINES-6, 0);
 	stat = newwin(4, /*half+2*/ x, LINES-4, 0);
-	box(main, 0, 0);
 
+		box(main, 0, 0);
 	wrefresh(main);
 	wrefresh(stat);
 	//choice = SIZE_ARRAY(choices);
@@ -337,10 +337,12 @@ while (fgets(line, filesize, fptr)) {
 
 	bool inplist = false;
 
+
 	Mix_HookMusicFinished(loop);
 	start_color();
 	use_default_colors();
 	init_pair(1, COLOR_WHITE, COLOR_WHITE);
+	init_pair(3, COLOR_WHITE, 0);
 	init_pair(2, COLOR_GREEN, -1);
 	int brkloop = false;
 	while(true) {
@@ -421,6 +423,7 @@ while (fgets(line, filesize, fptr)) {
 			scrollcname[x-5] = '\0';
 			mvwprintw(stat, 1, 1, "%s", scrollcname);
 
+	init_pair(1, COLOR_WHITE, COLOR_WHITE);
 		}
 		c = getch();
 		wrefresh(stat);
@@ -431,8 +434,13 @@ while (fgets(line, filesize, fptr)) {
 		attroff(COLOR_PAIR(2));
 		attroff(A_ITALIC);
 		
-
+		if(!curMenu) {
+			wattron(main, COLOR_PAIR(3));
+		}
 		box(main, 0, 0);
+		if(!curMenu) {
+			wattroff(main, COLOR_PAIR(3));
+		}
 		wrefresh(main);
 
 		if(c == '\t') {
