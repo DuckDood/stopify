@@ -1,4 +1,4 @@
-all: obj/ build/ obj/main.o build/stopify 
+all: obj/ build/ obj/main.o obj/getAudInfo.o build/stopify 
 
 clean:
 	rm -r obj/ build/ 
@@ -13,6 +13,9 @@ build/:
 obj/main.o: src/main.c
 	${CC} src/main.c -c -o obj/main.o 
 
-build/stopify: obj/main.o 
-	${CXX} obj/main.o  -o build/stopify -lncurses -lmenu -lSDL2 -lSDL2_mixer -lpthread 
+obj/getAudInfo.o: src/getAudInfo.c
+	${CC} src/getAudInfo.c -c -o obj/getAudInfo.o 
+
+build/stopify: obj/main.o obj/getAudInfo.o 
+	${CXX} obj/main.o obj/getAudInfo.o  -o build/stopify -lncurses -lmenu -lSDL2 -lSDL2_mixer -lpthread -lavformat -lavutil 
 

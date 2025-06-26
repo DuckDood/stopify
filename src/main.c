@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <math.h>
 #include <unistd.h>
+#include "getAudInfo.h"
 
 #define SIZE_ARRAY(a) (sizeof(a)/sizeof(a[0]))
 
@@ -67,6 +68,13 @@ char* argv1;
 
 float msicdur;
 float pos;
+
+char* stradd(char*f, char*p) {
+	char*ret = malloc(strlen(f)+strlen(p)+1);
+	strcpy(ret, f);
+	strcat(ret, p);
+	return ret;
+}
 
 
 void loop() {
@@ -167,8 +175,17 @@ int main(int argc, char** argv) {
 	dMenuItems[2] = new_item("Playlists", "");
 	dMenuItems[3] = new_item("Exit", "");
 	dMenuItems[4] = NULL;
-	for(int i = 0; i < choice; ++i)
-        items[i] = new_item(strdup(choices[i]), "");
+	char*artn;
+	for(int i = 0; i < choice; ++i) {
+		
+		artn = malloc(strlen(argv1) + strlen(choices[i])+2);
+		strcpy(artn, argv1);
+		strcat(artn, "/");
+		strcat(artn, choices[i]);
+        items[i] = new_item(strdup(choices[i]), stradd(" - ", artistName(artn) ) );
+        //items[i] = new_item(strdup(choices[i]), "");
+		free(artn);
+	}
 	items[choice] = (ITEM *)NULL;
 
 	char*plistn;

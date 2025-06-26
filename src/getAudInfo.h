@@ -1,0 +1,1 @@
+char* artistName(char* filename);

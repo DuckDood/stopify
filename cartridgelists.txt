@@ -8,7 +8,10 @@ dep menu
 dep SDL2
 dep SDL2_mixer
 dep pthread
+dep avformat
+dep avutil
 
 include main.c
+include getAudInfo.c
 
 build stopify
