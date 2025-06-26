@@ -17,5 +17,5 @@ obj/getAudInfo.o: src/getAudInfo.c
 	${CC} src/getAudInfo.c -c -o obj/getAudInfo.o 
 
 build/stopify: obj/main.o obj/getAudInfo.o 
-	${CXX} obj/main.o obj/getAudInfo.o  -o build/stopify -lncurses -lmenu -lSDL2 -lSDL2_mixer -lpthread -lavformat -lavutil 
+	${CXX} obj/main.o obj/getAudInfo.o  -o build/stopify -lncurses -lmenu -lSDL2 -lSDL2_mixer -lavformat -lavutil 
 

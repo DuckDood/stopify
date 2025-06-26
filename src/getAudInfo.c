@@ -17,11 +17,13 @@ char* artistName(char*filename) {
         return "";
     }
 
+	// this is probably important but i commented it out because it would print logs on the screen :(
+	// heheheha
     // Retrieve stream information
-    if (avformat_find_stream_info(format_context, NULL) < 0) {
-        avformat_close_input(&format_context);
-        return "";
-    }
+   // if (avformat_find_stream_info(format_context, NULL) < 0) {
+    //    avformat_close_input(&format_context);
+    //    return "";
+    //}
 
     // Print global metadata
     while ((tag = av_dict_get(format_context->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
