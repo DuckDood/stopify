@@ -1,4 +1,4 @@
-all: obj/ build/ obj/main.o build/output 
+all: obj/ build/ obj/main.o build/stopify 
 
 clean:
 	rm -r obj/ build/ 
@@ -13,6 +13,6 @@ build/:
 obj/main.o: src/main.c
 	${CC} src/main.c -c -o obj/main.o 
 
-build/output: obj/main.o 
-	${CXX} obj/main.o  -o build/output -lncurses -lmenu -lSDL2 -lSDL2_mixer -lpthread 
+build/stopify: obj/main.o 
+	${CXX} obj/main.o  -o build/stopify -lncurses -lmenu -lSDL2 -lSDL2_mixer -lpthread 
 

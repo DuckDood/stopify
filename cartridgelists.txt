@@ -11,4 +11,4 @@ dep pthread
 
 include main.c
 
-build output
+build stopify

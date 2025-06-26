@@ -680,7 +680,8 @@ while (fgets(line, filesize, fptr)) {
 				break;
 				*/
 			case 'c':
-			/**//*	textbox = newwin(3, 40, LINES/2-2, COLS/2-20);
+			/*
+				textbox = newwin(3, 40, LINES/2-2, COLS/2-20);
 				box(textbox, 0, 0);
 				wrefresh(textbox);
 				//nodelay();
@@ -700,8 +701,8 @@ while (fgets(line, filesize, fptr)) {
 				strcat(shellcmd, " &> /dev/null");
 				system(shellcmd);
 				delwin(textbox);
-*/
 
+*/
 				//goto start;
 /*
 */
