@@ -182,7 +182,10 @@ int main(int argc, char** argv) {
 		strcpy(artn, argv1);
 		strcat(artn, "/");
 		strcat(artn, choices[i]);
+		if(artistName(artn)[0] != '\0') 
         items[i] = new_item(strdup(choices[i]), stradd(" - ", artistName(artn) ) );
+		else
+        items[i] = new_item(strdup(choices[i]), "");
         //items[i] = new_item(strdup(choices[i]), "");
 		free(artn);
 	}
