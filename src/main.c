@@ -158,10 +158,10 @@ int main(int argc, char** argv) {
 	int half = COLS/3-2;
 	refresh();
 	//int width = COLS/3, height = LINES/1.3, x = (COLS-width)/2, y = (LINES-height)/2;
-	int width = COLS/3, height = LINES, x = (COLS-half)-COLS/6-1 , y = 0;
+	int width = COLS/2, height = LINES-4, x = half+4 , y = 0;
 	main = newwin(height, width, y, x);
 	//stat = newwin(6, 50, LINES-6, 0);
-	stat = newwin(4, /*half+2*/ x, LINES-4, 0);
+	stat = newwin(4, /*half+2*/ COLS-half/2, LINES-4, 0);
 
 		box(main, 0, 0);
 	wrefresh(main);
@@ -371,7 +371,7 @@ while (fgets(line, filesize, fptr)) {
 	start_color();
 	use_default_colors();
 	init_pair(1, COLOR_WHITE, COLOR_WHITE);
-	init_pair(3, COLOR_WHITE, 0);
+	init_pair(3, COLOR_WHITE, A_COLOR);
 	init_pair(2, COLOR_GREEN, -1);
 	int brkloop = false;
 	while(true) {
@@ -393,12 +393,12 @@ while (fgets(line, filesize, fptr)) {
 		werase(stat);
 		wborder(stat, 0,0,0,0, 0,0,0,0);
 	//	mvwprintw(stat, 2, 1, "________________________________________________");
-		for(int j = 0; j<x-2; j++) {
+		for(int j = 0; j<COLS-half/2-2; j++) {
 			mvwprintw(stat, 2, 1+j, "_");
 		}
 		//mvwprintw(stat, 2, 1+pos*48, "#");
 		wattron(stat, COLOR_PAIR(1));
-		mvwprintw(stat, 2, 1+pos*(x-2), "#");
+		mvwprintw(stat, 2, 1+pos*(COLS-(float)half/2-2), "#");
 		wattroff(stat, COLOR_PAIR(1));
 		if(strlen(playingSong) < x) {
 			ends = false;
