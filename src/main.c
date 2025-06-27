@@ -111,6 +111,10 @@ char **choices = {
 
 
 int main(int argc, char** argv) {
+	if(argv[1] == NULL) {
+		fprintf(stderr, "No argument\n");
+		return -1;
+	}
 	argv1 = argv[1];
 	if(argv[1][strlen(argv[1]-1)] != '/') {
 		strcat(argv[1], "/");
@@ -1051,6 +1055,7 @@ while (fgets(pline, plsize, playptr)) {
 
 			unpost_menu(menu);
 			unpost_menu(likeSongs);
+			unpost_menu(playlistNames);
 			if(!inplist) {
 				post_menu(playlistNames);
 			}

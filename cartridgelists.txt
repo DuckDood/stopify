@@ -1,3 +1,4 @@
+installbin stopify
 adddir obj/
 adddir build/
 cdir obj/

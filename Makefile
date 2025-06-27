@@ -1,5 +1,9 @@
 all: obj/ build/ obj/main.o obj/getAudInfo.o build/stopify 
 
+install:
+	install build/stopify /usr/local/bin/
+.PHONY: install
+
 clean:
 	rm -r obj/ build/ 
 .PHONY: clean
