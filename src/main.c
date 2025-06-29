@@ -539,6 +539,20 @@ while (fgets(line, filesize, fptr)) {
 			//	inplist = false;
 			//	continue;
 			//	break;
+			//
+			case '?':
+				textbox = newwin(LINES/1.5, COLS/3, LINES/2-LINES/3,COLS/2-COLS/6);
+
+				wprintw(textbox, "\n Global:\n  Tab: Switch between main menu and current select\n  Period: Play next song in queue (or restart if loop)\n  A/Left Arrow: Move back in song 5 seconds\n  D/Right Arrow: Move forward in song 5 seconds\n  L: Toggle loop\n  Space: Pause/Unpause\n  M: Go to main menu\n  Q: Add selected song to queue\n\n All:\n  H: Add song to liked\n  P: Add selected song to playlist\n\n Liked:\n  R: remove all songs from liked\n  P: Add selected song to playlist\n\n Playlists:\n  H: Add selected song to liked\n  N: Go to view of all playlists\n  R: When in playlist, remove all items from it");
+				box(textbox, 0, 0);
+
+				wrefresh(textbox);
+
+				wgetch(textbox);
+				werase(textbox);
+				wrefresh(textbox);
+				delwin(textbox);
+				break;
 
 			default:
 				break;
