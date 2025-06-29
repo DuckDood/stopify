@@ -138,12 +138,30 @@ int main(int argc, char** argv) {
 	}
 	struct dirent *dircont;
 	dir = opendir(argv[1]);
-	if(dir) {
+	/*if(dir) {
 		while((dircont = readdir(dir)) != NULL) {
-			if((dircont->d_type == DT_REG || dircont->d_type == DT_LNK) && strcmp(dircont->d_name, ".plists") && strcmp(dircont->d_name, ".play") ) {
+			if((dircont->d_type == DT_LNK) && strcmp(dircont->d_name, ".plists") && strcmp(dircont->d_name, ".play") ) {
 				choice++;
 				choices=realloc(choices, sizeof(char*)*(choice));
 				choices[choice-1] = dircont->d_name;
+			}
+		}
+	}
+
+	dir = opendir(argv[1]);*/
+	if(dir) {
+		while((dircont = readdir(dir)) != NULL) {
+			if((dircont->d_type == DT_REG) && strcmp(dircont->d_name, ".plists") && strcmp(dircont->d_name, ".play") ) {
+				choice++;
+				if(strlen(mName(stradd(argv1, dircont->d_name))) != 0) {
+				symlink(dircont->d_name, stradd(argv1,mName(stradd(argv1, dircont->d_name))));
+				choices=realloc(choices, sizeof(char*)*(choice));
+				choices[choice-1] = mName(stradd(argv1, dircont->d_name));
+				} else {
+				choices=realloc(choices, sizeof(char*)*(choice));
+				choices[choice-1] = dircont->d_name;
+
+				}
 			}
 		}
 	}

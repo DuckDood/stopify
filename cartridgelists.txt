@@ -13,5 +13,6 @@ dep avutil
 
 include main.c
 include getAudInfo.c
+include getAudName.c
 
 build stopify
