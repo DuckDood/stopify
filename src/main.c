@@ -439,7 +439,7 @@ while (fgets(line, filesize, fptr)) {
 			}*/
 			//usleep(100000);
 			
-			if(scrollamnt > strlen(playingSong)-(x-4)){
+			if(scrollamnt > strlen(playingSong)-(COLS-half/2-4)){
 			if(!ends) {
 				ends = true;
 				count = 0;
@@ -464,14 +464,14 @@ while (fgets(line, filesize, fptr)) {
 
 				sat=1;
 			}
-			if(framecount > 2000) {
+			if(framecount > 1001) {
 				if(!ends) {
 					scrollamnt+=sat;
 				}
 				framecount = 0;
 			}
-			strncpy(scrollcname, playingSong+scrollamnt, x-5);
-			scrollcname[x-5] = '\0';
+			strncpy(scrollcname, playingSong+scrollamnt, COLS-half/2-5);
+			scrollcname[COLS-half/2-5] = '\0';
 			mvwprintw(stat, 1, 1, "%s", scrollcname);
 
 	init_pair(1, COLOR_WHITE, COLOR_WHITE);
@@ -562,6 +562,22 @@ while (fgets(line, filesize, fptr)) {
 
 	if(!strcmp(item_name(current_item(mMenu)), "All") && curMenu) {
 	switch(c) {
+		// this was trying to rename artist but i was too lazy to do it halfway through
+	/*	case 'i':
+			textbox = newwin(3, 50, LINES/2-5, COLS/2-25);
+			box(textbox, 0, 0);
+			wrefresh(textbox);
+			nocbreak();
+			char* input = malloc(48 +1);
+			char* prompt = malloc(48*3 +1);
+			echo();
+			mvwgetnstr(textbox, 1, 1, input, 48);
+			noecho();
+			cbreak();
+			werase(textbox);
+			wrefresh(textbox);
+			delwin(textbox);
+			break;*/
 			case 'p':
 				textbox = newwin(20, COLS/5, LINES/2-10, COLS/2-COLS/10);
 	set_menu_win(playlistNames, textbox);
