@@ -563,7 +563,7 @@ while (fgets(line, filesize, fptr)) {
 	if(!strcmp(item_name(current_item(mMenu)), "All") && curMenu) {
 	switch(c) {
 		// this was trying to rename artist but i was too lazy to do it halfway through
-	/*	case 'i':
+		/*case 'i':
 			textbox = newwin(3, 50, LINES/2-5, COLS/2-25);
 			box(textbox, 0, 0);
 			wrefresh(textbox);
@@ -809,6 +809,82 @@ while (fgets(line, filesize, fptr)) {
 		}
 		} else if(!strcmp(item_name(current_item(mMenu)), "Liked") && curMenu) {
 			switch(c) {
+
+
+			case 'p':
+				textbox = newwin(20, COLS/5, LINES/2-10, COLS/2-COLS/10);
+	set_menu_win(playlistNames, textbox);
+	set_menu_format(playlistNames, height-2, 1);
+	set_menu_sub(playlistNames, derwin(textbox, 0, 0, 1, 0));
+	set_menu_pad(playlistNames, 1);
+
+	post_menu(playlistNames);
+	box(textbox, 0, 0);
+	wrefresh(textbox);
+	//sleep(2);
+	bool selecting = true;
+	int g;
+	nodelay(textbox, true);
+	while(selecting) {
+		g = getch();
+		//printw("%c", g);
+		switch(g) {
+			case '\n':
+				selecting = false;
+				break;
+			case KEY_UP:
+			case 'w':
+				//printw("wi");
+				//refresh();
+				menu_driver(playlistNames, REQ_UP_ITEM);
+				break;
+			case KEY_DOWN:
+			case 'd':
+				//printw("hi");
+				//refresh();
+				menu_driver(playlistNames, REQ_DOWN_ITEM);
+			default:
+				break;
+		}
+		box(textbox, 0, 0);
+		wrefresh(textbox);
+	}
+	char*filep = malloc(strlen(argv1) + strlen(item_name(current_item(likeSongs))) + strlen( playlists[item_index(current_item(playlistNames))].dirname)+1);
+	char*sympath = malloc(strlen(item_name(current_item(likeSongs))) + 3);
+	strcpy(filep, argv1);
+	strcat(filep, playlists[item_index(current_item(playlistNames))].dirname);
+	strcat(filep, "/");
+	strcat(filep, item_name(current_item(likeSongs)));
+
+	strcpy(sympath, "../");
+	strcat(sympath, item_name(current_item(likeSongs)));
+
+	symlink(sympath, filep);
+
+	nodelay(textbox, false);
+
+	unpost_menu(playlistNames);
+	werase(textbox);
+	wrefresh(textbox);
+	delwin(textbox);
+
+	set_menu_win(playlistNames, main);
+	set_menu_format(playlistNames, height-2, 1);
+	set_menu_sub(playlistNames, derwin(main, 0, 0, 1, 0));
+	set_menu_pad(playlistNames, 1);
+				
+
+				break;
+
+
+
+
+
+
+
+
+
+
 				case KEY_DOWN:
 				case 's':
 					menu_driver(likeSongs, REQ_DOWN_ITEM);
@@ -939,6 +1015,7 @@ while (fgets(line, filesize, fptr)) {
 					werase(textbox);
 					wrefresh(textbox);
 					delwin(textbox);
+					if(playname[0] == '\0') break;
 
 					char*playname2 = malloc(40);
 					strcpy(playname2, ".");
