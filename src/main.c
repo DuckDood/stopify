@@ -1,3 +1,4 @@
+#include <dlfcn.h>
 #include <ncurses.h>
 #include <sys/stat.h>
 #include <signal.h>
@@ -12,6 +13,29 @@
 #include "getAudInfo.h"
 
 #define SIZE_ARRAY(a) (sizeof(a)/sizeof(a[0]))
+
+//https://github.com/ncmpcpp/ncmpcpp/issues/449
+int endwinbetter(void) {
+    int (*original_endwin)(void);
+    original_endwin = dlsym(RTLD_NEXT, "endwin");
+    int ret = (*original_endwin)();
+
+    char *filename = "/.cache/wal/sequences";
+    char *home_dir = getenv("HOME");
+    char *filepath = malloc(strlen(home_dir) + strlen(filename) + 1);
+    strncpy(filepath, home_dir, strlen(home_dir) + 1);
+    strncat(filepath, filename, strlen(filename) + 1);
+
+    FILE *sequences;
+    char s;
+    sequences = fopen(filepath,"r");
+    while((s = fgetc(sequences)) != EOF) {
+      printf("%c", s);
+    }
+    fclose(sequences);
+
+    return ret;
+}
 
 
 char* readfile(FILE *f) {
@@ -51,8 +75,8 @@ struct playlist {
 
 
 void sigHandler(int s) {
-	endwin();
-	quick_exit(0);
+	endwinbetter();
+	exit(0);
 }
 
 
@@ -392,8 +416,9 @@ while (fgets(line, filesize, fptr)) {
 	Mix_HookMusicFinished(loop);
 	start_color();
 	use_default_colors();
+	init_color(16, 500, 500, 500);
 	init_pair(1, COLOR_WHITE, COLOR_WHITE);
-	init_pair(3, COLOR_WHITE, A_COLOR);
+	init_pair(3, 16, A_COLOR);
 	init_pair(2, COLOR_GREEN, -1);
 	int brkloop = false;
 	while(true) {
@@ -1296,7 +1321,7 @@ while (fgets(line, filesize, fptr)) {
 					break;
 				case '\n':
 					if(!strcmp(item_name(current_item(mMenu)), "Exit")) {
-						endwin();
+						endwinbetter();
 						return 0;
 					} else if(!strcmp(item_name(current_item(mMenu)), "All")) {
 						curMenu = !curMenu;
@@ -1355,5 +1380,5 @@ while (fgets(line, filesize, fptr)) {
 		}
 //	}
 	free_menu(menu);
-	endwin();
+	endwinbetter();
 }
