@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
 	int width = COLS/2, height = LINES-4, x = half+4 , y = 0;
 	main = newwin(height, width, y, x);
 	//stat = newwin(6, 50, LINES-6, 0);
-	stat = newwin(4, /*half+2*/ COLS-half/2, LINES-4, 0);
+	stat = newwin(5, /*half+2*/ COLS-half/2, LINES-4, 0);
 
 		box(main, 0, 0);
 	wrefresh(main);
@@ -405,7 +405,8 @@ while (fgets(line, filesize, fptr)) {
 	set_menu_pad(likeSongs, 1);
 
 
-	float absPos = -1;
+	//float absPos = -1;
+	float absPos = 0;
 	int curMenu = 0;
 	char name[50];
 	char *shellcmd;
@@ -432,21 +433,22 @@ while (fgets(line, filesize, fptr)) {
 		if(Mix_PlayingMusic()) {
 		absPos = Mix_GetMusicPosition(music);
 		}
-		if(absPos != -1) {
+		//if(absPos != -1) {
 		pos = absPos/msicdur;
-		}
+		//}
 				
 		framecount++;
 		werase(stat);
 		wborder(stat, 0,0,0,0, 0,0,0,0);
 	//	mvwprintw(stat, 2, 1, "________________________________________________");
 		for(int j = 0; j<COLS-half/2-2; j++) {
-			mvwprintw(stat, 2, 1+j, "_");
+			mvwprintw(stat, 3, 1+j, "_");
 		}
 		//mvwprintw(stat, 2, 1+pos*48, "#");
 		wattron(stat, COLOR_PAIR(1));
-		mvwprintw(stat, 2, 1+pos*(COLS-(float)half/2-2), "#");
+		mvwprintw(stat, 3, 1+pos*(COLS-(float)half/2-2), "#");
 		wattroff(stat, COLOR_PAIR(1));
+		mvwprintw(stat, 2, 1, "%d:%d/%d:%d",  (int)(absPos/60), (int)absPos-(int)(absPos/60)*60, (int)(msicdur/60), (int)msicdur-(int)(msicdur/60)*60);
 		if(strlen(playingSong) < COLS-half/2) {
 			ends = false;
 				mvwprintw(stat, 1, 1, "%s", playingSong);
