@@ -447,7 +447,7 @@ while (fgets(line, filesize, fptr)) {
 		wattron(stat, COLOR_PAIR(1));
 		mvwprintw(stat, 2, 1+pos*(COLS-(float)half/2-2), "#");
 		wattroff(stat, COLOR_PAIR(1));
-		if(strlen(playingSong) < x) {
+		if(strlen(playingSong) < COLS-half/2) {
 			ends = false;
 				mvwprintw(stat, 1, 1, "%s", playingSong);
 		} else {
