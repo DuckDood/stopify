@@ -36,6 +36,9 @@ int endwinbetter(void) {
 
     return ret;
 }
+int endwin(void) {
+	return endwinbetter();
+}
 
 
 char* readfile(FILE *f) {
@@ -86,6 +89,7 @@ char **queue;
 int queueLen = 0;
 MENU* menu;
 char*playingSong = "(None)";
+char*playingSongArtist = "";
 char* mspath = 0;
 
 char* argv1;
@@ -111,6 +115,8 @@ void loop() {
 		}
 				queueLen--;
 				playingSong=malloc(strlen(queue[0])+1);
+				playingSongArtist=malloc(strlen(artistName(stradd(argv1, queue[0])))+1);
+				strcpy(playingSongArtist, artistName(stradd(argv1, queue[0])));
 				strcpy(playingSong, queue[0]);
 				mspath = malloc(strlen(argv1)+strlen(queue[0])+2);
 				strcpy(mspath, argv1);
@@ -204,10 +210,10 @@ int main(int argc, char** argv) {
 	int half = COLS/3-2;
 	refresh();
 	//int width = COLS/3, height = LINES/1.3, x = (COLS-width)/2, y = (LINES-height)/2;
-	int width = COLS/2, height = LINES-4, x = half+4 , y = 0;
+	int width = COLS/2, height = LINES-6, x = half+4 , y = 0;
 	main = newwin(height, width, y, x);
 	//stat = newwin(6, 50, LINES-6, 0);
-	stat = newwin(5, /*half+2*/ COLS-half/2, LINES-4, 0);
+	stat = newwin(6, /*half+2*/ COLS-half/2, LINES-6, 0);
 
 		box(main, 0, 0);
 	wrefresh(main);
@@ -442,13 +448,14 @@ while (fgets(line, filesize, fptr)) {
 		wborder(stat, 0,0,0,0, 0,0,0,0);
 	//	mvwprintw(stat, 2, 1, "________________________________________________");
 		for(int j = 0; j<COLS-half/2-2; j++) {
-			mvwprintw(stat, 3, 1+j, "_");
+			mvwprintw(stat, 4, 1+j, "_");
 		}
 		//mvwprintw(stat, 2, 1+pos*48, "#");
 		wattron(stat, COLOR_PAIR(1));
-		mvwprintw(stat, 3, 1+pos*(COLS-(float)half/2-2), "#");
+		mvwprintw(stat, 4, 1+pos*(COLS-(float)half/2-2), "#");
 		wattroff(stat, COLOR_PAIR(1));
-		mvwprintw(stat, 2, 1, "%d:%02d/%d:%02d",  (int)(absPos/60), (uint8_t)absPos-(int)(absPos/60)*60, (int)(msicdur/60), (uint8_t)msicdur-(int)(msicdur/60)*60);
+		mvwprintw(stat, 2, 1, "%s", playingSongArtist);
+		mvwprintw(stat, 3, 1, "%d:%02d/%d:%02d",  (int)(absPos/60), (uint8_t)absPos-(int)(absPos/60)*60, (int)(msicdur/60), (uint8_t)msicdur-(int)(msicdur/60)*60);
 		if(strlen(playingSong) < COLS-half/2) {
 			ends = false;
 				mvwprintw(stat, 1, 1, "%s", playingSong);
@@ -777,6 +784,8 @@ while (fgets(line, filesize, fptr)) {
 			case '\n':
 				playingSong=malloc(strlen(item_name(current_item(menu)))+1);
 				strcpy(playingSong, item_name(current_item(menu)));
+				playingSongArtist=malloc(strlen(artistName(stradd(argv1, (char*)item_name(current_item(menu)))))+1);
+				strcpy(playingSongArtist, artistName(stradd(argv1, (char*)item_name(current_item(menu)))));
 				mspath = malloc(strlen(argv[1])+strlen((item_name(current_item(menu))))+2);
 				strcpy(mspath, argv[1]);
 				strcat(mspath, "/");
