@@ -141,6 +141,7 @@ char **choices = {
 
 
 int main(int argc, char** argv) {
+_reset:
 	if(argv[1] == NULL) {
 		fprintf(stderr, "No argument\n");
 		return -1;
@@ -429,8 +430,6 @@ while (fgets(line, filesize, fptr)) {
 	init_pair(2, COLOR_GREEN, -1);
 	int brkloop = false;
 	while(true) {
-	LINES = getmaxy(stdscr);
-	COLS = getmaxx(stdscr);
 		if(willloop) {
 			mvprintw(1, 0, "Looping    ");
 		} else {
@@ -454,7 +453,9 @@ while (fgets(line, filesize, fptr)) {
 		wattron(stat, COLOR_PAIR(1));
 		mvwprintw(stat, 4, 1+pos*(COLS-(float)half/2-2), "#");
 		wattroff(stat, COLOR_PAIR(1));
+		wattron(stat, A_ITALIC);
 		mvwprintw(stat, 2, 1, "%s", playingSongArtist);
+		wattroff(stat, A_ITALIC);
 		mvwprintw(stat, 3, 1, "%d:%02d/%d:%02d",  (int)(absPos/60), (uint8_t)absPos-(int)(absPos/60)*60, (int)(msicdur/60), (uint8_t)msicdur-(int)(msicdur/60)*60);
 		if(strlen(playingSong) < COLS-half/2) {
 			ends = false;
@@ -536,6 +537,10 @@ while (fgets(line, filesize, fptr)) {
 		}
 
 		switch(c) {
+			case KEY_RESIZE:
+				clear();
+				goto _reset;	
+				break;
 
 			case KEY_LEFT:
 			case 'a': 
@@ -568,6 +573,12 @@ while (fgets(line, filesize, fptr)) {
 			case 'm':
 				curMenu = 0;
 				break;
+			case '<':
+				system("pactl set-sink-volume @DEFAULT_SINK@ -5% &> /dev/null");
+				break;
+			case '>':
+				system("pactl set-sink-volume @DEFAULT_SINK@ +5% &> /dev/null");
+				break;
 			//case 'n':
 			//	werase(main);
 			//	inplist = false;
@@ -577,7 +588,7 @@ while (fgets(line, filesize, fptr)) {
 			case '?':
 				textbox = newwin(LINES/1.5, COLS/3, LINES/2-LINES/3,COLS/2-COLS/6);
 
-				wprintw(textbox, "\n Global:\n  Tab: Switch between main menu and current select\n  Period: Play next song in queue (or restart if loop)\n  A/Left Arrow: Move back in song 5 seconds\n  D/Right Arrow: Move forward in song 5 seconds\n  L: Toggle loop\n  Space: Pause/Unpause\n  M: Go to main menu\n  Q: Add selected song to queue\n\n All:\n  H: Add song to liked\n  P: Add selected song to playlist\n\n Liked:\n  R: remove all songs from liked\n  P: Add selected song to playlist\n\n Playlists:\n  H: Add selected song to liked\n  N: Go to view of all playlists\n  R: When in playlist, remove all items from it");
+				wprintw(textbox, "\n Global:\n  Tab: Switch between main menu and current select\n  Period: Play next song in queue (or restart if loop)\n  A/Left Arrow: Move back in song 5 seconds\n  D/Right Arrow: Move forward in song 5 seconds\n  L: Toggle loop\n  Space: Pause/Unpause\n  M: Go to main menu\n  Q: Add selected song to queue\n  <: Volume down\n  >: Volume up\n\n All:\n  H: Add song to liked\n  P: Add selected song to playlist\n\n Liked:\n  R: remove all songs from liked\n  P: Add selected song to playlist\n\n Playlists:\n  H: Add selected song to liked\n  N: Go to view of all playlists\n  R: When in playlist, remove all items from it");
 				box(textbox, 0, 0);
 
 				wrefresh(textbox);
@@ -762,6 +773,10 @@ while (fgets(line, filesize, fptr)) {
 				break;
 
 			/*
+	post_menu(menu);
+	post_menu(mMenu);
+	wrefresh(main);
+	refresh();
 			case KEY_LEFT:
 			case 'a': 
 				if(Mix_PlayingMusic()) {
