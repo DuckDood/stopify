@@ -948,6 +948,8 @@ while (fgets(line, filesize, fptr)) {
 				case '\n':
 					playingSong=malloc(strlen(item_name(current_item(likeSongs)))+1);
 					strcpy(playingSong, item_name(current_item(likeSongs)));
+				playingSongArtist=malloc(strlen(artistName(stradd(argv1, (char*)item_name(current_item(likeSongs)))))+1);
+				strcpy(playingSongArtist, artistName(stradd(argv1, (char*)item_name(current_item(likeSongs)))));
 					mspath = malloc(strlen(argv[1])+strlen((item_name(current_item(likeSongs))))+2);
 					strcpy(mspath, argv[1]);
 					strcat(mspath, "/");
@@ -1201,6 +1203,8 @@ while (fgets(pline, plsize, playptr)) {
 				case '\n':
 				playingSong=malloc(strlen(item_name(current_item(currentPlaylist)))+1);
 				strcpy(playingSong, item_name(current_item(currentPlaylist)));
+			playingSongArtist=malloc(strlen(artistName(stradd(argv1, (char*)item_name(current_item(currentPlaylist)))))+1);
+			strcpy(playingSongArtist, artistName(stradd(argv1, (char*)item_name(current_item(currentPlaylist)))));
 				mspath = malloc(strlen(argv[1])+strlen((item_name(current_item(currentPlaylist))))+2);
 				strcpy(mspath, argv[1]);
 				strcat(mspath, "/");
