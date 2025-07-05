@@ -211,7 +211,7 @@ _reset:
 	int half = COLS/3-2;
 	refresh();
 	//int width = COLS/3, height = LINES/1.3, x = (COLS-width)/2, y = (LINES-height)/2;
-	int width = COLS/2, height = LINES-6, x = half+4 , y = 0;
+	int width = COLS/2, height = LINES-6, x = COLS-half/2 -COLS/2 , y = 0;
 	main = newwin(height, width, y, x);
 	//stat = newwin(6, 50, LINES-6, 0);
 	stat = newwin(6, /*half+2*/ COLS-half/2, LINES-6, 0);
