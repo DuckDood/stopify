@@ -539,7 +539,45 @@ while (fgets(line, filesize, fptr)) {
 		switch(c) {
 			case KEY_RESIZE:
 				clear();
-				goto _reset;	
+				//goto _reset;	
+				curMenu = 0;
+				width = COLS/2, height = LINES-6, x = COLS-half/2 -COLS/2 , y = 0;
+
+				delwin(main);
+				delwin(stat);
+				delwin(queueView);
+				half = COLS/3-2;
+
+				main = newwin(height, width, y, x);
+				stat = newwin(6, /*half+2*/ COLS-half/2, LINES-6, 0);
+				queueView = newwin( LINES, half/2, 0,COLS-half/2);
+
+				unpost_menu(mMenu);
+				unpost_menu(playlistNames);
+				unpost_menu(likeSongs);
+				unpost_menu(menu);
+	set_menu_win(playlistNames, main);
+	set_menu_format(playlistNames, height-2, 1);
+	set_menu_sub(playlistNames, derwin(main, 0, 0, 1, 0));
+	set_menu_pad(playlistNames, 1);
+
+	set_menu_win(menu, main);
+	set_menu_format(menu, height-2, 1);
+	set_menu_sub(menu, derwin(main, 0, 0, 1, 0));
+	set_menu_pad(menu, 1);
+
+	set_menu_win(mMenu, stdscr);
+	set_menu_format(mMenu, 10, 1);
+	set_menu_sub(mMenu, derwin(stdscr, 0, 0, 3, 0));
+	set_menu_pad(mMenu, 1);
+
+	set_menu_win(likeSongs, main);
+	set_menu_format(likeSongs, height-2, 1);
+	set_menu_sub(likeSongs, derwin(main, 0, 0, 1, 0));
+	set_menu_pad(likeSongs, 1);
+
+				post_menu(mMenu);
+	
 				break;
 
 			case KEY_LEFT:
